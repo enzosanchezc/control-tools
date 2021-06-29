@@ -178,6 +178,9 @@ def factorize(tf: control.TransferFunction):
 
 
 def z_to_w(tf: control.TransferFunction):
+    if(tf.isctime()):
+        print('Estas intentando pasar al dominio w una función de transferencia continua')
+        return 0
     w = symbols('w')
     z = (1 + (tf.dt / 2) * w) / (1 - (tf.dt / 2) * w)
     num = tf.num[0][0]
@@ -329,7 +332,7 @@ def routh_hurwitz(gch: control.TransferFunction, K=False):
 # G = 40 * 0.707 * control.tf([1, 16, 80], [1]) * control.tf(
 #    np.poly([-2.78, -.01]), np.poly([-1, -10, -.025, 0, 0]))
 # EJERCICIO 1 PARCIAL 21/5/21
-G = 24 * 0.025 * control.tf(np.poly([4, 4, -0.39]), np.poly([0, 0, -9]))
+#G = 24 * 0.025 * control.tf(np.poly([4, 4, -0.39]), np.poly([0, 0, -9]))
 # C = 0.186 * control.tf(np.poly([-.299, -.03]), np.poly([0, -.00017]))
 
 # EJERCICIO 2 PARCIAL 21/5/21
@@ -353,4 +356,9 @@ G = 24 * 0.025 * control.tf(np.poly([4, 4, -0.39]), np.poly([0, 0, -9]))
 #G = 0.316227766 * control.tf([1/30, 1],[1/300,1])
 #stability_test(G)
 
-G_z = s_to_z(G,0.01)
+#G_z = s_to_z(G,0.01)
+
+G = control.tf([1],[1,1,0])
+G_z = s_to_z(G, 0.1)
+G_w = z_to_w(G_z)
+routh_hurwitz(G_w, True)
