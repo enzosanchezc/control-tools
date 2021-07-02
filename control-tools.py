@@ -52,7 +52,7 @@ def stability_test(tf: control.TransferFunction):
 
     puntos_de_quiebre = []
     tf_d = derivar(tf)
-    for i in range(-100, 0):
+    for i in range(-100, 100):
         try:
             temp = str(
                 round(float(str(findroot(lambda w: control.evalfr(tf_d, w), i).real)), 3))
@@ -134,7 +134,6 @@ def partial_fractions(tf: control.TransferFunction):
     bar = bar[:-3]
     den = den[:-3]
 
-    print('Expansión en fracciones parciales:')
     print(f'\n{num}\n{bar}\n{den}\n')
     return fractions
 
@@ -168,7 +167,7 @@ def factorize(tf: control.TransferFunction):
             den *= sym ** 2 - 2 * sym * re(pole) + abs(pole) ** 2
 
     dcgain = str(tf.num[0][0][0] / tf.den[0][0][0])
-    F = str(num / den).replace('**', '^').replace('*', '')[:-1].split('/(')
+    F = str(num / den).replace('**', '^').replace('*', '').split('/')
     F_0 = ' ' * (len(dcgain) + 1) + F[0].center(max(len(F[0]), len(F[1])))
     F_1 = dcgain + ' ' + '-' * max(len(F[0]), len(F[1]))
     F_2 = ' ' * (len(dcgain) + 1) + F[1].center(max(len(F[0]), len(F[1])))
@@ -235,9 +234,13 @@ def s_to_z(tf: control.TransferFunction, T: float, verbose=True):
     print('Funcion de transferencia en s:')
     print(tf)
 
-    fractions = partial_fractions(tf)
+    print('Expansión en fracciones parciales de tf / s:')
+    fractions = partial_fractions(tf * control.tf([1], [1, 0]))
+    fractions = [i * control.tf([1, 0], [1]) for i in fractions]
 
-    fractions = map(lambda x: control.sample_system(x, T), fractions)
+    fractions = map(lambda x: control.sample_system(x, T, ), fractions)
+    fractions = [(i * control.tf([1, 0], [1, -1], True)).minreal()
+                 for i in fractions]
 
     num = ''
     bar = ''
@@ -261,7 +264,7 @@ def s_to_z(tf: control.TransferFunction, T: float, verbose=True):
         f'Transformación al plano z con T = {T}seg: (https://lpsa.swarthmore.edu/LaplaceZTable/LaplaceZFuncTable.html)')
     print(f'\n{num}\n{bar}\n{den}\n')
 
-    print('Factorizando:')
+    print('Factorizando y multiplicando por (1 - z^-1):')
     tf_z = control.sample_system(tf, T)
     print(factorize(tf_z))
     print(tf_z)
@@ -354,11 +357,26 @@ def routh_hurwitz(gch: control.TransferFunction, K=False):
 # print(factorize(T))
 
 #G = 0.316227766 * control.tf([1/30, 1],[1/300,1])
-#stability_test(G)
+# stability_test(G)
 
 #G_z = s_to_z(G,0.01)
 
-G = control.tf([1],[1,1,0])
-G_z = s_to_z(G, 0.1)
-G_w = z_to_w(G_z)
-routh_hurwitz(G_w, True)
+#G = -0.26 * control.tf(np.poly([-23.42,2,-18]),np.poly([0,-30,-8]))
+#G_c = 0.013 * control.tf([1, 23.42],[1, 0])
+#G_c_z = s_to_z(G_c, 0.1)
+# print(factorize(G_c))
+#G_c_z = s_to_z(G_c,0.1)
+
+#G = -20 * control.tf([1, -2], [1, 30])
+#H = control.tf([1, 18], [1, 8])
+
+#G_z = s_to_z(G, 0.1)
+# print('----------------------------------------------------')
+#GH_z = s_to_z(H*G, 0.1)
+#C_z = 0.0284 * control.tf(np.poly([0.182]),np.poly([1]), 0.1)
+#stability_test(GH_z * C_z)
+
+#GH_w = z_to_w(GH_z)
+#C = control.tf([1],[1, 0])
+# print(factorize(GH_w))
+#stability_test(GH_w * C)
